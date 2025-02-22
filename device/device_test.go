@@ -73,7 +73,7 @@ func genConfigs(tb testing.TB) (cfgs, endpointCfgs [2]string) {
 	)
 	endpointCfgs[0] = uapiCfg(
 		"public_key", hex.EncodeToString(pub2[:]),
-		"endpoints", "127.0.0.1:%d",
+		"endpoint", "127.0.0.1:%d",
 	)
 	cfgs[1] = uapiCfg(
 		"private_key", hex.EncodeToString(key2[:]),
@@ -86,7 +86,7 @@ func genConfigs(tb testing.TB) (cfgs, endpointCfgs [2]string) {
 	)
 	endpointCfgs[1] = uapiCfg(
 		"public_key", hex.EncodeToString(pub1[:]),
-		"endpoints", "127.0.0.1:%d",
+		"endpoint", "127.0.0.1:%d",
 	)
 	return
 }
@@ -182,7 +182,7 @@ func genTestPair(tb testing.TB, realSocket bool) (pair testPair) {
 	for i := range pair {
 		p := &pair[i]
 		if err := p.dev.IpcSet(endpointCfg[i]); err != nil {
-			tb.Errorf("failed to configure device endpoints %d: %v", i, err)
+			tb.Errorf("failed to configure device endpoint %d: %v", i, err)
 			p.dev.Close()
 			continue
 		}

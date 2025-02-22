@@ -109,7 +109,7 @@ func (device *Device) IpcGetOperation(w io.Writer) error {
 			sendf("protocol_version=1")
 			peer.endpoints.Lock()
 			if len(peer.endpoints.val) != 0 {
-				sendf("endpoints=%s", peer.endpoints.val[0].DstToString())
+				sendf("endpoint=%s", peer.endpoints.val[0].DstToString())
 			}
 			peer.endpoints.Unlock()
 
@@ -343,11 +343,11 @@ func (device *Device) handlePeerLine(peer *ipcSetPeer, key, value string) error 
 			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set preshared key: %w", err)
 		}
 
-	case "endpoints":
-		device.log.Verbosef("%v - UAPI: Updating endpoints", peer.Peer)
+	case "endpoint":
+		device.log.Verbosef("%v - UAPI: Updating endpoint", peer.Peer)
 		endpoint, err := device.net.bind.ParseEndpoint(value)
 		if err != nil {
-			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set endpoints %v: %w", value, err)
+			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set endpoint %v: %w", value, err)
 		}
 		peer.endpoints.Lock()
 		defer peer.endpoints.Unlock()
