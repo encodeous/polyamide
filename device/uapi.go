@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/encodeous/polyamide/conn"
 	"io"
 	"net"
 	"net/netip"
@@ -106,11 +107,11 @@ func (device *Device) IpcGetOperation(w io.Writer) error {
 			keyf("preshared_key", (*[32]byte)(&peer.handshake.presharedKey))
 			peer.handshake.mutex.RUnlock()
 			sendf("protocol_version=1")
-			peer.endpoint.Lock()
-			if peer.endpoint.val != nil {
-				sendf("endpoint=%s", peer.endpoint.val.DstToString())
+			peer.endpoints.Lock()
+			if len(peer.endpoints.val) != 0 {
+				sendf("endpoints=%s", peer.endpoints.val[0].DstToString())
 			}
-			peer.endpoint.Unlock()
+			peer.endpoints.Unlock()
 
 			nano := peer.lastHandshakeNano.Load()
 			secs := nano / time.Second.Nanoseconds()
@@ -265,7 +266,7 @@ func (peer *ipcSetPeer) handlePostConfig() {
 		return
 	}
 	if peer.created {
-		peer.endpoint.disableRoaming = peer.device.net.brokenRoaming && peer.endpoint.val != nil
+		peer.endpoints.disableRoaming = peer.device.net.brokenRoaming && len(peer.endpoints.val) != 0
 	}
 	if peer.device.isUp() {
 		peer.Start()
@@ -342,15 +343,15 @@ func (device *Device) handlePeerLine(peer *ipcSetPeer, key, value string) error 
 			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set preshared key: %w", err)
 		}
 
-	case "endpoint":
-		device.log.Verbosef("%v - UAPI: Updating endpoint", peer.Peer)
+	case "endpoints":
+		device.log.Verbosef("%v - UAPI: Updating endpoints", peer.Peer)
 		endpoint, err := device.net.bind.ParseEndpoint(value)
 		if err != nil {
-			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set endpoint %v: %w", value, err)
+			return ipcErrorf(ipc.IpcErrorInvalid, "failed to set endpoints %v: %w", value, err)
 		}
-		peer.endpoint.Lock()
-		defer peer.endpoint.Unlock()
-		peer.endpoint.val = endpoint
+		peer.endpoints.Lock()
+		defer peer.endpoints.Unlock()
+		peer.endpoints.val = []conn.Endpoint{endpoint}
 
 	case "persistent_keepalive_interval":
 		device.log.Verbosef("%v - UAPI: Updating persistent keepalive interval", peer.Peer)

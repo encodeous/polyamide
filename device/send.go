@@ -46,11 +46,12 @@ import (
  */
 
 type QueueOutboundElement struct {
-	buffer  *[MaxMessageSize]byte // slice holding the packet data
-	packet  []byte                // slice of "buffer" (always!)
-	nonce   uint64                // nonce for encryption
-	keypair *Keypair              // keypair for encryption
-	peer    *Peer                 // related peer
+	buffer   *[MaxMessageSize]byte // slice holding the packet data
+	packet   []byte                // slice of "buffer" (always!)
+	nonce    uint64                // nonce for encryption
+	keypair  *Keypair              // keypair for encryption
+	peer     *Peer                 // related peer
+	endpoint conn.Endpoint         // if the element is bound for a specific endpoint
 }
 
 type QueueOutboundElementsContainer struct {
@@ -133,7 +134,16 @@ func (peer *Peer) SendHandshakeInitiation(isRetry bool) error {
 	peer.timersAnyAuthenticatedPacketTraversal()
 	peer.timersAnyAuthenticatedPacketSent()
 
-	err = peer.SendBuffers([][]byte{packet})
+	peer.endpoints.Lock()
+	tbuf := make([][]byte, 0)
+	// we need to send a handshake to every available endpoint, since we don't know which endpoint is still reachable
+	for range peer.endpoints.val {
+		tbuf = append(tbuf, packet)
+	}
+
+	err = peer.SendBuffers(tbuf, peer.endpoints.val)
+
+	peer.endpoints.Unlock()
 	if err != nil {
 		peer.device.log.Errorf("%v - Failed to send handshake initiation: %v", peer, err)
 	}
@@ -142,7 +152,7 @@ func (peer *Peer) SendHandshakeInitiation(isRetry bool) error {
 	return err
 }
 
-func (peer *Peer) SendHandshakeResponse() error {
+func (peer *Peer) SendHandshakeResponse(srcEndpoint conn.Endpoint) error {
 	peer.handshake.mutex.Lock()
 	peer.handshake.lastSentHandshake = time.Now()
 	peer.handshake.mutex.Unlock()
@@ -172,7 +182,7 @@ func (peer *Peer) SendHandshakeResponse() error {
 	peer.timersAnyAuthenticatedPacketSent()
 
 	// TODO: allocation could be avoided
-	err = peer.SendBuffers([][]byte{packet})
+	err = peer.SendBuffers([][]byte{packet}, []conn.Endpoint{srcEndpoint})
 	if err != nil {
 		peer.device.log.Errorf("%v - Failed to send handshake response: %v", peer, err)
 	}
@@ -296,6 +306,27 @@ func (device *Device) RoutineReadFromTUN() {
 				device.log.Errorf("Failed to loop back packets to TUN device: %v", err)
 			}
 			lpBufs = lpBufs[:0]
+		}
+
+		// poly sock
+	endPoly:
+		for {
+			select {
+			case outEle := <-device.net.polySocket.outQueue:
+				peer := outEle.peer
+				elemsForPeer, ok := elemsByPeer[peer]
+				if !ok {
+					elemsForPeer = device.GetOutboundElementsContainer()
+					elemsByPeer[peer] = elemsForPeer
+				}
+				elem := device.NewOutboundElement()
+				elem.buffer = outEle.buffer
+				elem.packet = outEle.packet
+				elem.endpoint = outEle.ep
+				elemsForPeer.elems = append(elemsForPeer.elems, elem)
+			default:
+				break endPoly
+			}
 		}
 
 		for peer, elemsForPeer := range elemsByPeer {
@@ -499,9 +530,11 @@ func (peer *Peer) RoutineSequentialSender(maxBatchSize int) {
 	device.log.Verbosef("%v - Routine: sequential sender - started", peer)
 
 	bufs := make([][]byte, 0, maxBatchSize)
+	eps := make([]conn.Endpoint, 0)
 
 	for elemsContainer := range peer.queue.outbound.c {
 		bufs = bufs[:0]
+		eps = eps[:0]
 		if elemsContainer == nil {
 			return
 		}
@@ -526,12 +559,13 @@ func (peer *Peer) RoutineSequentialSender(maxBatchSize int) {
 				dataSent = true
 			}
 			bufs = append(bufs, elem.packet)
+			eps = append(eps, elem.endpoint)
 		}
 
 		peer.timersAnyAuthenticatedPacketTraversal()
 		peer.timersAnyAuthenticatedPacketSent()
 
-		err := peer.SendBuffers(bufs)
+		err := peer.SendBuffers(bufs, eps)
 		if dataSent {
 			peer.timersDataSent()
 		}

@@ -21,13 +21,13 @@ type Peer struct {
 	handshake         Handshake
 	device            *Device
 	stopping          sync.WaitGroup // routines pending stop
-	txBytes           atomic.Uint64  // bytes send to peer (endpoint)
+	txBytes           atomic.Uint64  // bytes send to peer (endpoints)
 	rxBytes           atomic.Uint64  // bytes received from peer
 	lastHandshakeNano atomic.Int64   // nano seconds since epoch
 
-	endpoint struct {
+	endpoints struct {
 		sync.Mutex
-		val            conn.Endpoint
+		val            []conn.Endpoint
 		clearSrcOnTx   bool // signal to val.ClearSrc() prior to next packet transmission
 		disableRoaming bool
 	}
@@ -97,12 +97,12 @@ func (device *Device) NewPeer(pk NoisePublicKey) (*Peer, error) {
 	handshake.remoteStatic = pk
 	handshake.mutex.Unlock()
 
-	// reset endpoint
-	peer.endpoint.Lock()
-	peer.endpoint.val = nil
-	peer.endpoint.disableRoaming = false
-	peer.endpoint.clearSrcOnTx = false
-	peer.endpoint.Unlock()
+	// reset endpoints
+	peer.endpoints.Lock()
+	peer.endpoints.val = peer.endpoints.val[:]
+	peer.endpoints.disableRoaming = false
+	peer.endpoints.clearSrcOnTx = false
+	peer.endpoints.Unlock()
 
 	// init timers
 	peer.timersInit()
@@ -113,7 +113,7 @@ func (device *Device) NewPeer(pk NoisePublicKey) (*Peer, error) {
 	return peer, nil
 }
 
-func (peer *Peer) SendBuffers(buffers [][]byte) error {
+func (peer *Peer) SendBuffers(buffers [][]byte, eps []conn.Endpoint) error {
 	peer.device.net.RLock()
 	defer peer.device.net.RUnlock()
 
@@ -121,27 +121,40 @@ func (peer *Peer) SendBuffers(buffers [][]byte) error {
 		return nil
 	}
 
-	peer.endpoint.Lock()
-	endpoint := peer.endpoint.val
-	if endpoint == nil {
-		peer.endpoint.Unlock()
-		return errors.New("no known endpoint for peer")
+	peer.endpoints.Lock()
+	endpoints := peer.endpoints.val
+	if len(endpoints) == 0 {
+		peer.endpoints.Unlock()
+		return errors.New("no known endpoints for peer")
 	}
-	if peer.endpoint.clearSrcOnTx {
-		endpoint.ClearSrc()
-		peer.endpoint.clearSrcOnTx = false
+	if peer.endpoints.clearSrcOnTx {
+		endpoints[0].ClearSrc()
+		peer.endpoints.clearSrcOnTx = false
 	}
-	peer.endpoint.Unlock()
+	peer.endpoints.Unlock()
 
-	err := peer.device.net.bind.Send(buffers, endpoint)
-	if err == nil {
-		var totalLen uint64
-		for _, b := range buffers {
-			totalLen += uint64(len(b))
-		}
-		peer.txBytes.Add(totalLen)
+	// group by endpoints
+	bufByEp := make(map[conn.Endpoint][][]byte)
+	for i, buf := range buffers {
+		bufByEp[eps[i]] = append(bufByEp[eps[i]], buf)
 	}
-	return err
+
+	for ep, bufs := range bufByEp {
+		if ep == nil {
+			ep = endpoints[0] // default endpoints
+		}
+		err := peer.device.net.bind.Send(bufs, ep)
+		if err == nil {
+			var totalLen uint64
+			for _, b := range buffers {
+				totalLen += uint64(len(b))
+			}
+			peer.txBytes.Add(totalLen)
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
 func (peer *Peer) String() string {
@@ -277,20 +290,28 @@ func (peer *Peer) Stop() {
 }
 
 func (peer *Peer) SetEndpointFromPacket(endpoint conn.Endpoint) {
-	peer.endpoint.Lock()
-	defer peer.endpoint.Unlock()
-	if peer.endpoint.disableRoaming {
+	peer.endpoints.Lock()
+	defer peer.endpoints.Unlock()
+	if peer.endpoints.disableRoaming {
 		return
 	}
-	peer.endpoint.clearSrcOnTx = false
-	peer.endpoint.val = endpoint
+	panic("endpoint roaming is not supported in polyamide")
+	//peer.endpoints.clearSrcOnTx = false
+	//peer.endpoints.val = endpoint
+}
+
+// SetEndpoints configures the endpoints of the peer. The first endpoint will be the default endpoint used for packet routing
+func (peer *Peer) SetEndpoints(endpoints []conn.Endpoint) {
+	peer.endpoints.Lock()
+	defer peer.endpoints.Unlock()
+	peer.endpoints.val = endpoints
 }
 
 func (peer *Peer) markEndpointSrcForClearing() {
-	peer.endpoint.Lock()
-	defer peer.endpoint.Unlock()
-	if peer.endpoint.val == nil {
+	peer.endpoints.Lock()
+	defer peer.endpoints.Unlock()
+	if len(peer.endpoints.val) == 0 {
 		return
 	}
-	peer.endpoint.clearSrcOnTx = true
+	peer.endpoints.clearSrcOnTx = true
 }

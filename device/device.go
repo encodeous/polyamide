@@ -326,9 +326,7 @@ func NewDevice(tunDevice tun.Device, bind conn.Bind, logger *Logger) *Device {
 	go device.RoutineReadFromTUN()
 	go device.RoutineTUNEventReader()
 
-	batchSize := device.BatchSize()
 	device.net.polySocket = newPolySock(device)
-	go device.net.polySocket.routinePolySender(batchSize)
 
 	return device
 }
@@ -356,6 +354,17 @@ func (device *Device) LookupPeer(pk NoisePublicKey) *Peer {
 	defer device.peers.RUnlock()
 
 	return device.peers.keyMap[pk]
+}
+
+func (device *Device) GetPeers() []*Peer {
+	device.peers.RLock()
+	defer device.peers.RUnlock()
+
+	peers := make([]*Peer, 0, len(device.peers.keyMap))
+	for _, peer := range device.peers.keyMap {
+		peers = append(peers, peer)
+	}
+	return peers
 }
 
 func (device *Device) RemovePeer(key NoisePublicKey) {

@@ -202,11 +202,6 @@ func (device *Device) RoutineReceiveIncoming(maxBatchSize int, recv conn.Receive
 				if len(packet) != MessageCookieReplySize {
 					continue
 				}
-			case PolySockType:
-				if device.net.polySocket != nil && device.net.polySocket.recv != nil {
-					device.net.polySocket.recv.Receive(packet[4:], endpoints[i])
-				}
-				continue
 
 			default:
 				device.log.Verbosef("Received message with unknown type")
@@ -378,13 +373,13 @@ func (device *Device) RoutineHandshake(id int) {
 			peer.timersAnyAuthenticatedPacketTraversal()
 			peer.timersAnyAuthenticatedPacketReceived()
 
-			// update endpoint
+			// update endpoints
 			peer.SetEndpointFromPacket(elem.endpoint)
 
 			device.log.Verbosef("%v - Received handshake initiation", peer)
 			peer.rxBytes.Add(uint64(len(elem.packet)))
 
-			peer.SendHandshakeResponse()
+			peer.SendHandshakeResponse(elem.endpoint)
 
 		case MessageResponseType:
 
@@ -406,7 +401,7 @@ func (device *Device) RoutineHandshake(id int) {
 				goto skip
 			}
 
-			// update endpoint
+			// update endpoints
 			peer.SetEndpointFromPacket(elem.endpoint)
 
 			device.log.Verbosef("%v - Received handshake response", peer)
@@ -509,6 +504,20 @@ func (peer *Peer) RoutineSequentialReceiver(maxBatchSize int) {
 				if device.allowedips.Lookup(src) != peer && !device.allowAllInbound {
 					device.log.Verbosef("IPv6 packet with disallowed source address from %v", peer)
 					continue
+				}
+
+			case 7:
+				// actually poly socket, let's hope there is no ipv7 in the future LMAO
+				// "IPv7" header: 1 byte version number, 2 byte length
+				if len(elem.packet) < 3 {
+					continue
+				}
+				if device.net.polySocket != nil && device.net.polySocket.recv != nil {
+					length := binary.BigEndian.Uint16(elem.packet[1:3])
+					if int(length)+3 > len(elem.packet) {
+						continue
+					}
+					device.net.polySocket.recv.Receive(elem.packet[3:length+3], elem.endpoint, peer)
 				}
 
 			default:

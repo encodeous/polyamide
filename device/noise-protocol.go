@@ -57,7 +57,6 @@ const (
 	MessageResponseType    = 2
 	MessageCookieReplyType = 3
 	MessageTransportType   = 4
-	PolySockType           = 5
 )
 
 const (

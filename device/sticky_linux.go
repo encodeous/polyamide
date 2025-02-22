@@ -134,18 +134,18 @@ func (device *Device) routineRouteListener(bind conn.Bind, netlinkSock int, netl
 					device.peers.RLock()
 					i := uint32(1)
 					for _, peer := range device.peers.keyMap {
-						peer.endpoint.Lock()
-						if peer.endpoint.val == nil {
-							peer.endpoint.Unlock()
+						peer.endpoints.Lock()
+						if len(peer.endpoints.val) == 0 {
+							peer.endpoints.Unlock()
 							continue
 						}
-						nativeEP, _ := peer.endpoint.val.(*conn.StdNetEndpoint)
+						nativeEP, _ := peer.endpoints.val[0].(*conn.StdNetEndpoint)
 						if nativeEP == nil {
-							peer.endpoint.Unlock()
+							peer.endpoints.Unlock()
 							continue
 						}
 						if nativeEP.DstIP().Is6() || nativeEP.SrcIfidx() == 0 {
-							peer.endpoint.Unlock()
+							peer.endpoints.Unlock()
 							break
 						}
 						nlmsg := struct {
@@ -188,10 +188,10 @@ func (device *Device) routineRouteListener(bind conn.Bind, netlinkSock int, netl
 						reqPeerLock.Lock()
 						reqPeer[i] = peerEndpointPtr{
 							peer:     peer,
-							endpoint: &peer.endpoint.val,
+							endpoint: &peer.endpoints.val[0],
 						}
 						reqPeerLock.Unlock()
-						peer.endpoint.Unlock()
+						peer.endpoints.Unlock()
 						i++
 						_, err := netlinkCancel.Write((*[unsafe.Sizeof(nlmsg)]byte)(unsafe.Pointer(&nlmsg))[:])
 						if err != nil {
