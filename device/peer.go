@@ -299,7 +299,7 @@ func (peer *Peer) SetEndpointFromPacket(endpoint conn.Endpoint) {
 	if peer.endpoints.disableRoaming {
 		return
 	}
-	panic("endpoint roaming is not supported in polyamide")
+	//endpoint roaming is not supported/needed in polyamide
 	//peer.endpoints.clearSrcOnTx = false
 	//peer.endpoints.val = endpoint
 }
