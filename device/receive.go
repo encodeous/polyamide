@@ -513,12 +513,15 @@ func (peer *Peer) RoutineSequentialReceiver(maxBatchSize int) {
 					continue
 				}
 				if device.net.polySocket != nil && device.net.polySocket.recv != nil {
-					rpkt := elem.packet[MessageTransportOffsetContent:]
-					length := binary.BigEndian.Uint16(rpkt[1:3])
-					if int(length)+3 > len(elem.packet) {
+					field := elem.packet[1:3]
+					length := binary.BigEndian.Uint16(field)
+					length += 3
+					if int(length) > len(elem.packet) {
 						continue
 					}
-					device.net.polySocket.recv.Receive(rpkt[3:length+3], elem.endpoint, peer)
+					elem.packet = elem.packet[3:length]
+					device.net.polySocket.recv.Receive(elem.packet, elem.endpoint, peer)
+					continue
 				}
 
 			default:

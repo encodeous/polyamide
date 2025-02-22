@@ -24,19 +24,18 @@ type PolyReceiver interface {
 }
 
 func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
-	if len(packet) > MaxMessageSize-(3+MessageTransportOffsetContent) {
-		panic("packet too large")
-	}
 	if s.outQueue == nil {
 		panic("outQueue is nil")
 	}
 	elem := &outboundElement{}
 	elem.buffer = s.Device.GetMessageBuffer()
-	pktBuf := elem.buffer[MessageTransportOffsetContent:]
-	copy(pktBuf[3:], packet)
-	pktBuf[0] = 8 << 4
-	binary.LittleEndian.PutUint16(pktBuf[1:3], uint16(len(packet)))
-	elem.packet = pktBuf[:3+len(packet)]
+	offset := MessageTransportHeaderSize
+
+	elem.packet = elem.buffer[offset : offset+len(packet)+3]
+	elem.packet[0] = 8 << 4
+	binary.LittleEndian.PutUint16(elem.packet[1:3], uint16(len(packet)))
+
+	copy(elem.packet[3:], packet)
 	elem.ep = endpoint
 	elem.peer = peer
 	s.outQueue <- elem
