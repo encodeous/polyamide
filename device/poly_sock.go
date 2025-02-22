@@ -15,7 +15,7 @@ type outboundElement struct {
 type PolySock struct {
 	recv     PolyReceiver
 	outQueue chan *outboundElement
-	device   *Device
+	Device   *Device
 }
 
 type PolyReceiver interface {
@@ -28,7 +28,7 @@ func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 		panic("packet too large")
 	}
 	elem := &outboundElement{}
-	elem.buffer = s.device.GetMessageBuffer()
+	elem.buffer = s.Device.GetMessageBuffer()
 	copy(elem.buffer[3:], packet)
 	elem.buffer[0] = 7
 	binary.LittleEndian.PutUint16(elem.buffer[1:3], uint16(len(packet)))
@@ -42,7 +42,7 @@ func newPolySock(dev *Device) *PolySock {
 	return &PolySock{
 		recv:     nil,
 		outQueue: make(chan *outboundElement),
-		device:   dev,
+		Device:   dev,
 	}
 }
 
