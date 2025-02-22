@@ -308,30 +308,6 @@ func (device *Device) RoutineReadFromTUN() {
 			lpBufs = lpBufs[:0]
 		}
 
-		// poly sock
-	endPoly:
-		for {
-			select {
-			case outEle := <-device.net.polySocket.outQueue:
-				if outEle == nil {
-					break endPoly
-				}
-				peer := outEle.peer
-				elemsForPeer, ok := elemsByPeer[peer]
-				if !ok {
-					elemsForPeer = device.GetOutboundElementsContainer()
-					elemsByPeer[peer] = elemsForPeer
-				}
-				elem := device.NewOutboundElement()
-				elem.buffer = outEle.buffer
-				elem.packet = outEle.packet
-				elem.endpoint = outEle.ep
-				elemsForPeer.elems = append(elemsForPeer.elems, elem)
-			default:
-				break endPoly
-			}
-		}
-
 		for peer, elemsForPeer := range elemsByPeer {
 			if peer.isRunning.Load() {
 				peer.StagePackets(elemsForPeer)

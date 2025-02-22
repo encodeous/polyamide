@@ -48,3 +48,31 @@ func newPolySock(dev *Device) *PolySock {
 		Device:   dev,
 	}
 }
+
+func (device *Device) routineSendPoly() {
+	// poly sock
+	for outEle := range device.net.polySocket.outQueue {
+		if outEle == nil {
+			return
+		}
+		peer := outEle.peer
+		elemsForPeer := device.GetOutboundElementsContainer()
+		elem := device.NewOutboundElement()
+		elem.buffer = outEle.buffer
+		elem.packet = outEle.packet
+		elem.endpoint = outEle.ep
+		// probably can optimize this
+		elemsForPeer.elems = []*QueueOutboundElement{elem}
+
+		if peer.isRunning.Load() {
+			peer.StagePackets(elemsForPeer)
+			peer.SendStagedPackets()
+		} else {
+			for _, elem := range elemsForPeer.elems {
+				device.PutMessageBuffer(elem.buffer)
+				device.PutOutboundElement(elem)
+			}
+			device.PutOutboundElementsContainer(elemsForPeer)
+		}
+	}
+}

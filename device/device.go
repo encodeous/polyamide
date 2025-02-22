@@ -324,6 +324,7 @@ func NewDevice(tunDevice tun.Device, bind conn.Bind, logger *Logger) *Device {
 	device.queue.encryption.wg.Add(1) // RoutineReadFromTUN
 	go device.RoutineReadFromTUN()
 	go device.RoutineTUNEventReader()
+	go device.routineSendPoly()
 
 	device.net.polySocket = newPolySock(device)
 
