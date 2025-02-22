@@ -48,9 +48,3 @@ func newPolySock(dev *Device) *PolySock {
 		Device:   dev,
 	}
 }
-
-func (s *PolySock) stop() {
-	if s.outQueue != nil {
-		s.outQueue <- nil
-	}
-}

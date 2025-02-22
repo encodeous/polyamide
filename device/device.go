@@ -205,7 +205,6 @@ func (device *Device) downLocked() error {
 	for _, peer := range device.peers.keyMap {
 		peer.Stop()
 	}
-	device.net.polySocket.stop()
 	device.peers.RUnlock()
 	return err
 }
