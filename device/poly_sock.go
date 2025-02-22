@@ -34,7 +34,7 @@ func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 	elem.buffer = s.Device.GetMessageBuffer()
 	pktBuf := elem.buffer[MessageTransportOffsetContent:]
 	copy(pktBuf[3:], packet)
-	pktBuf[0] = 7
+	pktBuf[0] = 8 << 4
 	binary.LittleEndian.PutUint16(pktBuf[1:3], uint16(len(packet)))
 	elem.packet = pktBuf[:3+len(packet)]
 	elem.ep = endpoint

@@ -506,9 +506,9 @@ func (peer *Peer) RoutineSequentialReceiver(maxBatchSize int) {
 					continue
 				}
 
-			case 7:
-				// actually poly socket, let's hope there is no ipv7 in the future LMAO
-				// "IPv7" header: 1 byte version number, 2 byte length
+			case 8:
+				// actually poly socket, let's hope there is no ipv8 in the future LMAO
+				// "IPv8" header: 1 byte version number, 2 byte length
 				if len(elem.packet) < 3 {
 					continue
 				}
