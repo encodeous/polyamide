@@ -314,7 +314,7 @@ func (device *Device) RoutineReadFromTUN() {
 			select {
 			case outEle := <-device.net.polySocket.outQueue:
 				if outEle == nil {
-					break
+					break endPoly
 				}
 				peer := outEle.peer
 				elemsForPeer, ok := elemsByPeer[peer]
