@@ -27,6 +27,9 @@ func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 	if len(packet) > MaxMessageSize-3 {
 		panic("packet too large")
 	}
+	if s.outQueue == nil {
+		panic("outQueue is nil")
+	}
 	elem := &outboundElement{}
 	elem.buffer = s.Device.GetMessageBuffer()
 	copy(elem.buffer[3:], packet)
@@ -47,5 +50,7 @@ func newPolySock(dev *Device) *PolySock {
 }
 
 func (s *PolySock) stop() {
-	s.outQueue <- nil
+	if s.outQueue != nil {
+		s.outQueue <- nil
+	}
 }
