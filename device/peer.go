@@ -99,7 +99,7 @@ func (device *Device) NewPeer(pk NoisePublicKey) (*Peer, error) {
 
 	// reset endpoints
 	peer.endpoints.Lock()
-	peer.endpoints.val = peer.endpoints.val[:]
+	peer.endpoints.val = peer.endpoints.val[:0]
 	peer.endpoints.disableRoaming = false
 	peer.endpoints.clearSrcOnTx = false
 	peer.endpoints.Unlock()
@@ -155,6 +155,10 @@ func (peer *Peer) SendBuffers(buffers [][]byte, eps []conn.Endpoint) error {
 		}
 	}
 	return nil
+}
+
+func (peer *Peer) GetPublicKey() NoisePublicKey {
+	return peer.handshake.remoteStatic
 }
 
 func (peer *Peer) String() string {
