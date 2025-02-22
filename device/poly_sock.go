@@ -78,7 +78,5 @@ func (device *Device) routineSendPoly() {
 }
 
 func (s *PolySock) stop() {
-	if s.outQueue != nil {
-		s.outQueue <- nil
-	}
+	close(s.outQueue)
 }
