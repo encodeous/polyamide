@@ -110,17 +110,17 @@ func (device *Device) routineRouteListener(bind conn.Bind, netlinkSock int, netl
 								if !ok {
 									break
 								}
-								pePtr.peer.endpoint.Lock()
-								if &pePtr.peer.endpoint.val != pePtr.endpoint {
-									pePtr.peer.endpoint.Unlock()
+								pePtr.peer.endpoints.Lock()
+								if &pePtr.peer.endpoints.val[0] != pePtr.endpoint {
+									pePtr.peer.endpoints.Unlock()
 									break
 								}
-								if uint32(pePtr.peer.endpoint.val.(*conn.StdNetEndpoint).SrcIfidx()) == ifidx {
-									pePtr.peer.endpoint.Unlock()
+								if uint32(pePtr.peer.endpoints.val[0].(*conn.StdNetEndpoint).SrcIfidx()) == ifidx {
+									pePtr.peer.endpoints.Unlock()
 									break
 								}
-								pePtr.peer.endpoint.clearSrcOnTx = true
-								pePtr.peer.endpoint.Unlock()
+								pePtr.peer.endpoints.clearSrcOnTx = true
+								pePtr.peer.endpoints.Unlock()
 							}
 							attr = attr[attrhdr.Len:]
 						}
