@@ -401,6 +401,7 @@ func (device *Device) Close() {
 	device.log.Verbosef("Device closing")
 
 	device.tun.device.Close()
+	device.net.polySocket.stop()
 	device.downLocked()
 
 	// Remove peers before closing queues,
