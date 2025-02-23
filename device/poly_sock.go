@@ -63,11 +63,11 @@ func (device *Device) routineSendPoly() {
 		elem.endpoint = outEle.ep
 		elemContainer.elems = append(elemContainer.elems, elem)
 
-		select {
-		case peer.queue.staged <- elemContainer:
+		if peer.isRunning.Load() {
+			peer.StagePackets(elemContainer)
 			peer.SendStagedPackets()
-		default:
-			device.log.Errorf("unable to stage poly socket, stage queue is full")
+		} else {
+			device.log.Errorf("unable to stage poly socket, peer is not running")
 			peer.device.PutMessageBuffer(elem.buffer)
 			peer.device.PutOutboundElement(elem)
 			peer.device.PutOutboundElementsContainer(elemContainer)
