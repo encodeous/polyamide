@@ -65,7 +65,7 @@ type Device struct {
 	}
 
 	allowAllInbound bool
-	allowedips      AllowedIPs
+	Allowedips      AllowedIPs
 	indexTable      IndexTable
 	cookieChecker   CookieChecker
 
@@ -131,7 +131,7 @@ func (device *Device) isUp() bool {
 // Must hold device.peers.Lock()
 func removePeerLocked(device *Device, peer *Peer, key NoisePublicKey) {
 	// stop routing and processing of packets
-	device.allowedips.RemoveByPeer(peer)
+	device.Allowedips.RemoveByPeer(peer)
 	peer.Stop()
 
 	// remove from peer map

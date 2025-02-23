@@ -123,7 +123,7 @@ func (device *Device) IpcGetOperation(w io.Writer) error {
 			sendf("rx_bytes=%d", peer.rxBytes.Load())
 			sendf("persistent_keepalive_interval=%d", peer.persistentKeepaliveInterval.Load())
 
-			device.allowedips.EntriesForPeer(peer, func(prefix netip.Prefix) bool {
+			device.Allowedips.EntriesForPeer(peer, func(prefix netip.Prefix) bool {
 				sendf("allowed_ip=%s", prefix.String())
 				return true
 			})
@@ -374,7 +374,7 @@ func (device *Device) handlePeerLine(peer *ipcSetPeer, key, value string) error 
 		if peer.dummy {
 			return nil
 		}
-		device.allowedips.RemoveByPeer(peer.Peer)
+		device.Allowedips.RemoveByPeer(peer.Peer)
 
 	case "allowed_ip":
 		device.log.Verbosef("%v - UAPI: Adding allowedip", peer.Peer)
@@ -385,7 +385,7 @@ func (device *Device) handlePeerLine(peer *ipcSetPeer, key, value string) error 
 		if peer.dummy {
 			return nil
 		}
-		device.allowedips.Insert(prefix, peer.Peer)
+		device.Allowedips.Insert(prefix, peer.Peer)
 
 	case "protocol_version":
 		if value != "1" {

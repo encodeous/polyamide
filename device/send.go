@@ -271,14 +271,14 @@ func (device *Device) RoutineReadFromTUN() {
 					continue
 				}
 				dst := elem.packet[IPv4offsetDst : IPv4offsetDst+net.IPv4len]
-				peer = device.allowedips.Lookup(dst)
+				peer = device.Allowedips.Lookup(dst)
 
 			case 6:
 				if len(elem.packet) < ipv6.HeaderLen {
 					continue
 				}
 				dst := elem.packet[IPv6offsetDst : IPv6offsetDst+net.IPv6len]
-				peer = device.allowedips.Lookup(dst)
+				peer = device.Allowedips.Lookup(dst)
 
 			default:
 				device.log.Verbosef("Received packet with unknown IP version")
