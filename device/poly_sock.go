@@ -56,23 +56,20 @@ func (device *Device) routineSendPoly() {
 			return
 		}
 		peer := outEle.peer
-		elemsForPeer := device.GetOutboundElementsContainer()
+		elemContainer := device.GetOutboundElementsContainer()
 		elem := device.NewOutboundElement()
 		elem.buffer = outEle.buffer
 		elem.packet = outEle.packet
 		elem.endpoint = outEle.ep
-		// probably can optimize this
-		elemsForPeer.elems = []*QueueOutboundElement{elem}
+		elemContainer.elems = append(elemContainer.elems, elem)
 
-		if peer.isRunning.Load() {
-			peer.StagePackets(elemsForPeer)
+		select {
+		case peer.queue.staged <- elemContainer:
 			peer.SendStagedPackets()
-		} else {
-			for _, elem := range elemsForPeer.elems {
-				device.PutMessageBuffer(elem.buffer)
-				device.PutOutboundElement(elem)
-			}
-			device.PutOutboundElementsContainer(elemsForPeer)
+		default:
+			peer.device.PutMessageBuffer(elem.buffer)
+			peer.device.PutOutboundElement(elem)
+			peer.device.PutOutboundElementsContainer(elemContainer)
 		}
 	}
 }
