@@ -67,6 +67,7 @@ func (device *Device) routineSendPoly() {
 		case peer.queue.staged <- elemContainer:
 			peer.SendStagedPackets()
 		default:
+			device.log.Errorf("unable to stage poly socket, stage queue is full")
 			peer.device.PutMessageBuffer(elem.buffer)
 			peer.device.PutOutboundElement(elem)
 			peer.device.PutOutboundElementsContainer(elemContainer)

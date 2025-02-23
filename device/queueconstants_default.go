@@ -10,7 +10,7 @@ package device
 import "github.com/encodeous/polyamide/conn"
 
 const (
-	QueueStagedSize            = conn.IdealBatchSize
+	QueueStagedSize            = conn.IdealBatchSize + 64 // for poly sockets
 	QueueOutboundSize          = 1024
 	QueueInboundSize           = 1024
 	QueueHandshakeSize         = 1024
