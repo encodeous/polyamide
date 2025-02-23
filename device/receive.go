@@ -373,7 +373,7 @@ func (device *Device) RoutineHandshake(id int) {
 			peer.timersAnyAuthenticatedPacketTraversal()
 			peer.timersAnyAuthenticatedPacketReceived()
 
-			// update endpoints
+			// update endpoint
 			peer.SetEndpointFromPacket(elem.endpoint)
 
 			device.log.Verbosef("%v - Received handshake initiation", peer)
@@ -401,7 +401,7 @@ func (device *Device) RoutineHandshake(id int) {
 				goto skip
 			}
 
-			// update endpoints
+			// update endpoint
 			peer.SetEndpointFromPacket(elem.endpoint)
 
 			device.log.Verbosef("%v - Received handshake response", peer)

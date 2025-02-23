@@ -139,22 +139,23 @@ func (peer *Peer) SendBuffers(buffers [][]byte, eps []conn.Endpoint) error {
 		bufByEp[eps[i]] = append(bufByEp[eps[i]], buf)
 	}
 
+	var totalLen uint64
+	var anyError error
 	for ep, bufs := range bufByEp {
 		if ep == nil {
-			ep = endpoints[0] // default endpoints
+			ep = endpoints[0] // default endpoint
 		}
 		err := peer.device.net.bind.Send(bufs, ep)
 		if err == nil {
-			var totalLen uint64
-			for _, b := range buffers {
+			for _, b := range bufs {
 				totalLen += uint64(len(b))
 			}
-			peer.txBytes.Add(totalLen)
 		} else {
-			return err
+			anyError = err
 		}
 	}
-	return nil
+	peer.txBytes.Add(totalLen)
+	return anyError
 }
 
 func (peer *Peer) GetPublicKey() NoisePublicKey {
