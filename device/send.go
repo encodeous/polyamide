@@ -76,6 +76,7 @@ func (elem *QueueOutboundElement) clearPointers() {
 	elem.packet = nil
 	elem.keypair = nil
 	elem.peer = nil
+	elem.endpoint = nil
 }
 
 /* Queues a keepalive if no packets are queued for peer
