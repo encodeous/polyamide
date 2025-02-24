@@ -48,10 +48,6 @@ func (e *DummyEndpoint) SrcIP() netip.Addr {
 	return e.src
 }
 
-func (e *DummyEndpoint) SrcIPPort() netip.AddrPort {
-	return netip.AddrPortFrom(e.SrcIP(), 1000)
-}
-
 func (e *DummyEndpoint) DstIPPort() netip.AddrPort {
 	return netip.AddrPortFrom(e.DstIP(), 1000)
 }

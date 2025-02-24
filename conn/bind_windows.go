@@ -182,9 +182,6 @@ func (e *WinRingEndpoint) DstIPPort() netip.AddrPort {
 func (e *WinRingEndpoint) SrcToString() string {
 	return ""
 }
-func (e *WinRingEndpoint) SrcIPPort() netip.AddrPort {
-	panic("not implemented")
-}
 
 func (ring *ringBuffer) CloseAndZero() {
 	if ring.cq != 0 {

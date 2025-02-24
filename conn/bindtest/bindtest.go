@@ -70,8 +70,6 @@ func (c ChannelEndpoint) DstIPPort() netip.AddrPort {
 	return netip.MustParseAddrPort(fmt.Sprintf("127.0.0.1:%d", c))
 }
 
-func (c ChannelEndpoint) SrcIPPort() netip.AddrPort { return netip.AddrPort{} }
-
 func (c *ChannelBind) Open(port uint16) (fns []conn.ReceiveFunc, actualPort uint16, err error) {
 	c.closeSignal = make(chan bool)
 	fns = append(fns, c.makeReceiveFunc(*c.rx4))

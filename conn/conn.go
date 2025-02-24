@@ -83,7 +83,6 @@ type Endpoint interface {
 	DstIP() netip.Addr
 	SrcIP() netip.Addr
 	DstIPPort() netip.AddrPort
-	SrcIPPort() netip.AddrPort
 }
 
 var (
