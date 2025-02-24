@@ -8,6 +8,7 @@ package device
 import (
 	"container/list"
 	"errors"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -301,9 +302,12 @@ func (peer *Peer) SetEndpointFromPacket(endpoint conn.Endpoint) {
 	if peer.endpoints.disableRoaming {
 		return
 	}
-	//endpoint roaming is not supported/needed in polyamide
-	//peer.endpoints.clearSrcOnTx = false
-	//peer.endpoints.val = endpoint
+	peer.endpoints.clearSrcOnTx = false
+	if !slices.ContainsFunc(peer.endpoints.val, func(endpoint conn.Endpoint) bool {
+		return endpoint.DstIPPort() == endpoint.DstIPPort()
+	}) {
+		peer.endpoints.val = append(peer.endpoints.val, endpoint)
+	}
 }
 
 // SetEndpoints configures the endpoints of the peer. The first endpoint will be the default endpoint used for packet routing
