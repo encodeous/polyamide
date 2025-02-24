@@ -162,21 +162,28 @@ func (e *WinRingEndpoint) DstToBytes() []byte {
 }
 
 func (e *WinRingEndpoint) DstToString() string {
+	return e.DstIPPort().String()
+}
+
+func (e *WinRingEndpoint) DstIPPort() netip.AddrPort {
 	switch e.family {
 	case windows.AF_INET:
-		return netip.AddrPortFrom(netip.AddrFrom4(*(*[4]byte)(e.data[2:6])), binary.BigEndian.Uint16(e.data[0:2])).String()
+		return netip.AddrPortFrom(netip.AddrFrom4(*(*[4]byte)(e.data[2:6])), binary.BigEndian.Uint16(e.data[0:2]))
 	case windows.AF_INET6:
 		var zone string
 		if scope := *(*uint32)(unsafe.Pointer(&e.data[22])); scope > 0 {
 			zone = strconv.FormatUint(uint64(scope), 10)
 		}
-		return netip.AddrPortFrom(netip.AddrFrom16(*(*[16]byte)(e.data[6:22])).WithZone(zone), binary.BigEndian.Uint16(e.data[0:2])).String()
+		return netip.AddrPortFrom(netip.AddrFrom16(*(*[16]byte)(e.data[6:22])).WithZone(zone), binary.BigEndian.Uint16(e.data[0:2]))
 	}
-	return ""
+	panic("Socket Family is not supported")
 }
 
 func (e *WinRingEndpoint) SrcToString() string {
 	return ""
+}
+func (e *WinRingEndpoint) SrcIPPort() netip.AddrPort {
+	panic("not implemented")
 }
 
 func (ring *ringBuffer) CloseAndZero() {

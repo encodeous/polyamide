@@ -82,6 +82,8 @@ type Endpoint interface {
 	DstToBytes() []byte  // used for mac2 cookie calculations
 	DstIP() netip.Addr
 	SrcIP() netip.Addr
+	DstIPPort() netip.AddrPort
+	SrcIPPort() netip.AddrPort
 }
 
 var (

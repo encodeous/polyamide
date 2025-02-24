@@ -45,6 +45,10 @@ func (e *StdNetEndpoint) SrcToString() string {
 	return e.SrcIP().String()
 }
 
+func (e *StdNetEndpoint) SrcIPPort() netip.AddrPort {
+	panic("not implemented")
+}
+
 // getSrcFromControl parses the control for PKTINFO and if found updates ep with
 // the source information found.
 func getSrcFromControl(control []byte, ep *StdNetEndpoint) {
