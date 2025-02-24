@@ -136,12 +136,15 @@ func (peer *Peer) SendHandshakeInitiation(isRetry bool) error {
 	peer.timersAnyAuthenticatedPacketSent()
 
 	// try a different index every time
+	peer.endpoints.Lock()
 	if len(peer.endpoints.val) == 0 {
 		peer.device.log.Errorf("%v - Cannot send handshake initiation to %v, no endpoints available", peer)
 	}
 	peer.endpoints.lastInitIndex = (peer.endpoints.lastInitIndex + 1) % len(peer.endpoints.val)
+	selEp := []conn.Endpoint{peer.endpoints.val[peer.endpoints.lastInitIndex]}
+	peer.endpoints.Unlock()
 
-	err = peer.SendBuffers([][]byte{packet}, []conn.Endpoint{peer.endpoints.val[peer.endpoints.lastInitIndex]})
+	err = peer.SendBuffers([][]byte{packet}, selEp)
 	if err != nil {
 		peer.device.log.Errorf("%v - Failed to send handshake initiation: %v", peer, err)
 	}
