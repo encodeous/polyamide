@@ -32,6 +32,7 @@ type Peer struct {
 		clearSrcOnTx   bool // signal to val.ClearSrc() prior to next packet transmission
 		disableRoaming bool
 		lastInitIndex  int
+		preferRoaming  bool // the endpoint from roaming will be set as the first index
 	}
 
 	timers struct {
@@ -303,10 +304,21 @@ func (peer *Peer) SetEndpointFromPacket(endpoint conn.Endpoint) {
 		return
 	}
 	peer.endpoints.clearSrcOnTx = false
-	if !slices.ContainsFunc(peer.endpoints.val, func(endpoint conn.Endpoint) bool {
+	idx := slices.IndexFunc(peer.endpoints.val, func(endpoint conn.Endpoint) bool {
 		return endpoint.DstIPPort() == endpoint.DstIPPort()
-	}) {
-		peer.endpoints.val = append(peer.endpoints.val, endpoint)
+	})
+
+	if idx == -1 {
+		if peer.endpoints.preferRoaming {
+			peer.endpoints.val = append([]conn.Endpoint{endpoint}, peer.endpoints.val...)
+		} else {
+			peer.endpoints.val = append(peer.endpoints.val, endpoint)
+		}
+	} else {
+		nep := []conn.Endpoint{endpoint}
+		nep = append(nep, peer.endpoints.val[:idx]...)
+		nep = append(nep, peer.endpoints.val[idx+1:]...)
+		peer.endpoints.val = nep
 	}
 }
 
@@ -321,6 +333,18 @@ func (peer *Peer) GetEndpoints() []conn.Endpoint {
 	peer.handshake.mutex.RLock()
 	defer peer.handshake.mutex.RUnlock()
 	return slices.Clone(peer.endpoints.val)
+}
+
+func (peer *Peer) SetPreferRoaming(val bool) {
+	peer.endpoints.Lock()
+	defer peer.endpoints.Unlock()
+	peer.endpoints.preferRoaming = val
+}
+
+func (peer *Peer) GetPreferRoaming() bool {
+	peer.handshake.mutex.RLock()
+	defer peer.handshake.mutex.RUnlock()
+	return peer.endpoints.preferRoaming
 }
 
 func (peer *Peer) markEndpointSrcForClearing() {
