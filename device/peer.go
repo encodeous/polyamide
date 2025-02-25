@@ -317,6 +317,12 @@ func (peer *Peer) SetEndpoints(endpoints []conn.Endpoint) {
 	peer.endpoints.val = endpoints
 }
 
+func (peer *Peer) GetEndpoints() []conn.Endpoint {
+	peer.handshake.mutex.RLock()
+	defer peer.handshake.mutex.RUnlock()
+	return slices.Clone(peer.endpoints.val)
+}
+
 func (peer *Peer) markEndpointSrcForClearing() {
 	peer.endpoints.Lock()
 	defer peer.endpoints.Unlock()
@@ -324,4 +330,19 @@ func (peer *Peer) markEndpointSrcForClearing() {
 		return
 	}
 	peer.endpoints.clearSrcOnTx = true
+}
+
+func (peer *Peer) LastHandshake() time.Time {
+	nano := peer.lastHandshakeNano.Load()
+	return time.Unix(0, nano)
+}
+
+func (peer *Peer) SetPersistentKeepaliveInterval(interval time.Duration) {
+	old := peer.persistentKeepaliveInterval.Swap(uint32(interval.Seconds()))
+
+	// Send immediate keepalive if we're turning it on and before it wasn't on.
+	if old == 0 && interval.Seconds() != 0 {
+		peer.SendKeepalive()
+		peer.SendStagedPackets()
+	}
 }
