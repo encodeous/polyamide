@@ -131,7 +131,9 @@ func (peer *Peer) SendBuffers(buffers [][]byte, eps []conn.Endpoint) error {
 		return errors.New("no known endpoints for peer")
 	}
 	if peer.endpoints.clearSrcOnTx {
-		endpoints[0].ClearSrc()
+		for _, ep := range endpoints {
+			ep.ClearSrc()
+		}
 		peer.endpoints.clearSrcOnTx = false
 	}
 	peer.endpoints.Unlock()
