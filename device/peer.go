@@ -311,17 +311,19 @@ func (peer *Peer) SetEndpointFromPacket(endpoint conn.Endpoint) {
 		return endpoint.DstIPPort() == endpoint.DstIPPort()
 	})
 
-	if idx == -1 {
-		if peer.endpoints.preferRoaming {
+	if peer.endpoints.preferRoaming {
+		if idx == -1 {
 			peer.endpoints.val = append([]conn.Endpoint{endpoint}, peer.endpoints.val...)
 		} else {
-			peer.endpoints.val = append(peer.endpoints.val, endpoint)
+			nep := []conn.Endpoint{endpoint}
+			nep = append(nep, peer.endpoints.val[:idx]...)
+			nep = append(nep, peer.endpoints.val[idx+1:]...)
+			peer.endpoints.val = nep
 		}
 	} else {
-		nep := []conn.Endpoint{endpoint}
-		nep = append(nep, peer.endpoints.val[:idx]...)
-		nep = append(nep, peer.endpoints.val[idx+1:]...)
-		peer.endpoints.val = nep
+		if idx == -1 {
+			peer.endpoints.val = append(peer.endpoints.val, endpoint)
+		}
 	}
 }
 
