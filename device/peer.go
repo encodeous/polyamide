@@ -41,6 +41,7 @@ type Peer struct {
 		newHandshake            *Timer
 		zeroKeyMaterial         *Timer
 		persistentKeepalive     *Timer
+		lastReceived            atomic.Int64
 		handshakeAttempts       atomic.Uint32
 		needAnotherKeepalive    atomic.Bool
 		sentLastMinuteHandshake atomic.Bool
@@ -358,8 +359,8 @@ func (peer *Peer) markEndpointSrcForClearing() {
 	peer.endpoints.clearSrcOnTx = true
 }
 
-func (peer *Peer) LastHandshake() time.Time {
-	nano := peer.lastHandshakeNano.Load()
+func (peer *Peer) LastReceivedPacket() time.Time {
+	nano := peer.timers.lastReceived.Load()
 	return time.Unix(0, nano)
 }
 

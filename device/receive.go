@@ -370,7 +370,7 @@ func (device *Device) RoutineHandshake(id int) {
 
 			// update timers
 
-			peer.timersAnyAuthenticatedPacketTraversal()
+			peer.timersAnyAuthenticatedPacketTraversal(true)
 			peer.timersAnyAuthenticatedPacketReceived()
 
 			// update endpoint
@@ -409,7 +409,7 @@ func (device *Device) RoutineHandshake(id int) {
 
 			// update timers
 
-			peer.timersAnyAuthenticatedPacketTraversal()
+			peer.timersAnyAuthenticatedPacketTraversal(true)
 			peer.timersAnyAuthenticatedPacketReceived()
 
 			// derive keypair
@@ -536,7 +536,7 @@ func (peer *Peer) RoutineSequentialReceiver(maxBatchSize int) {
 		if validTailPacket >= 0 {
 			peer.SetEndpointFromPacket(elemsContainer.elems[validTailPacket].endpoint)
 			peer.keepKeyFreshReceiving()
-			peer.timersAnyAuthenticatedPacketTraversal()
+			peer.timersAnyAuthenticatedPacketTraversal(true)
 			peer.timersAnyAuthenticatedPacketReceived()
 		}
 		if dataPacketReceived {

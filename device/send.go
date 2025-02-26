@@ -132,7 +132,7 @@ func (peer *Peer) SendHandshakeInitiation(isRetry bool) error {
 	packet := writer.Bytes()
 	peer.cookieGenerator.AddMacs(packet)
 
-	peer.timersAnyAuthenticatedPacketTraversal()
+	peer.timersAnyAuthenticatedPacketTraversal(false)
 	peer.timersAnyAuthenticatedPacketSent()
 
 	// try a different index every time
@@ -181,7 +181,7 @@ func (peer *Peer) SendHandshakeResponse(srcEndpoint conn.Endpoint) error {
 	}
 
 	peer.timersSessionDerived()
-	peer.timersAnyAuthenticatedPacketTraversal()
+	peer.timersAnyAuthenticatedPacketTraversal(false)
 	peer.timersAnyAuthenticatedPacketSent()
 
 	// TODO: allocation could be avoided
@@ -544,7 +544,7 @@ func (peer *Peer) RoutineSequentialSender(maxBatchSize int) {
 			eps = append(eps, elem.endpoint)
 		}
 
-		peer.timersAnyAuthenticatedPacketTraversal()
+		peer.timersAnyAuthenticatedPacketTraversal(false)
 		peer.timersAnyAuthenticatedPacketSent()
 
 		err := peer.SendBuffers(bufs, eps)
