@@ -108,11 +108,7 @@ func (c *ChannelBind) Open(port uint16) (fns []conn.ReceiveFunc, actualPort uint
 
 func (c *ChannelBind) Close() error {
 	if c.closeSignal != nil {
-		select {
-		case <-c.closeSignal:
-		default:
-			close(c.closeSignal)
-		}
+		c.closeSignal <- false
 	}
 	return nil
 }
