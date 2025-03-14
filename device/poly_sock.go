@@ -3,6 +3,7 @@ package device
 import (
 	"encoding/binary"
 	"github.com/encodeous/polyamide/conn"
+	"time"
 )
 
 type outboundElement struct {
@@ -51,27 +52,34 @@ func newPolySock(dev *Device) *PolySock {
 
 func (device *Device) routineSendPoly() {
 	// poly sock
-	for outEle := range device.net.polySocket.outQueue {
-		if outEle == nil {
-			return
+	for !device.isClosed() {
+		if device.net.polySocket == nil { // wait for poly sock to be ready
+			time.Sleep(100 * time.Millisecond)
+			continue
 		}
-		peer := outEle.peer
-		elemContainer := device.GetOutboundElementsContainer()
-		elem := device.NewOutboundElement()
-		elem.buffer = outEle.buffer
-		elem.packet = outEle.packet
-		elem.endpoint = outEle.ep
-		elemContainer.elems = append(elemContainer.elems, elem)
+		for outEle := range device.net.polySocket.outQueue {
+			if outEle == nil {
+				return
+			}
+			peer := outEle.peer
+			elemContainer := device.GetOutboundElementsContainer()
+			elem := device.NewOutboundElement()
+			elem.buffer = outEle.buffer
+			elem.packet = outEle.packet
+			elem.endpoint = outEle.ep
+			elemContainer.elems = append(elemContainer.elems, elem)
 
-		if peer.isRunning.Load() {
-			peer.StagePackets(elemContainer)
-			peer.SendStagedPackets()
-		} else {
-			device.log.Errorf("unable to stage poly socket, peer is not running")
-			peer.device.PutMessageBuffer(elem.buffer)
-			peer.device.PutOutboundElement(elem)
-			peer.device.PutOutboundElementsContainer(elemContainer)
+			if peer.isRunning.Load() {
+				peer.StagePackets(elemContainer)
+				peer.SendStagedPackets()
+			} else {
+				device.log.Errorf("unable to stage poly socket, peer is not running")
+				peer.device.PutMessageBuffer(elem.buffer)
+				peer.device.PutOutboundElement(elem)
+				peer.device.PutOutboundElementsContainer(elemContainer)
+			}
 		}
+		break
 	}
 }
 
