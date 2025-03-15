@@ -6,11 +6,13 @@
 package bindtest
 
 import (
-	"fmt"
 	"github.com/encodeous/polyamide/conn"
 	"net"
 	"net/netip"
-	"slices"
+)
+
+const (
+	VirtualPort = 25565
 )
 
 type chanPkt struct {
@@ -25,7 +27,7 @@ type ChannelBind2 struct {
 	sendVia     func(to ChannelEndpoint2) ChannelEndpoint2
 }
 
-type ChannelEndpoint2 uint16
+type ChannelEndpoint2 netip.AddrPort
 
 var (
 	_ conn.Bind     = (*ChannelBind2)(nil)
@@ -53,15 +55,23 @@ func (c ChannelEndpoint2) ClearSrc() {}
 
 func (c ChannelEndpoint2) SrcToString() string { return "" }
 
-func (c ChannelEndpoint2) DstToString() string { return fmt.Sprintf("127.0.0.1:%d", c) }
+func (c ChannelEndpoint2) DstToString() string {
+	return netip.AddrPort(c).String()
+}
 
-func (c ChannelEndpoint2) DstToBytes() []byte { return []byte{byte(c)} }
+func (c ChannelEndpoint2) DstToBytes() []byte {
+	addr := netip.AddrPort(c)
+	b, _ := addr.MarshalBinary()
+	return b
+}
 
-func (c ChannelEndpoint2) DstIP() netip.Addr { return netip.AddrFrom4([4]byte{127, 0, 0, 1}) }
+func (c ChannelEndpoint2) DstIP() netip.Addr {
+	return netip.AddrPort(c).Addr()
+}
 
 func (c ChannelEndpoint2) SrcIP() netip.Addr { return netip.Addr{} }
 func (c ChannelEndpoint2) DstIPPort() netip.AddrPort {
-	return netip.MustParseAddrPort(fmt.Sprintf("127.0.0.1:%d", c))
+	return netip.AddrPort(c)
 }
 
 func (c *ChannelBind2) Open(port uint16) (fns []conn.ReceiveFunc, actualPort uint16, err error) {
@@ -118,5 +128,9 @@ func (c *ChannelBind2) Send(bufs [][]byte, ep conn.Endpoint) error {
 }
 
 func (c *ChannelBind2) ParseEndpoint(s string) (conn.Endpoint, error) {
-	return ChannelEndpoint2(slices.Index(*c.epLookup, s)), nil
+	ap, err := netip.ParseAddrPort(s)
+	if err != nil {
+		return nil, err
+	}
+	return ChannelEndpoint2(ap), err
 }
