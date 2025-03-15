@@ -55,31 +55,6 @@ func NewChannelBinds() [2]conn.Bind {
 	return [2]conn.Bind{&binds[0], &binds[1]}
 }
 
-func NewChannelBindsId(id int) [2]conn.Bind {
-	arx4 := make(chan []byte, 8192)
-	brx4 := make(chan []byte, 8192)
-	arx6 := make(chan []byte, 8192)
-	brx6 := make(chan []byte, 8192)
-	var binds [2]ChannelBind
-	binds[0].rx4 = &arx4
-	binds[0].tx4 = &brx4
-	binds[1].rx4 = &brx4
-	binds[1].tx4 = &arx4
-	binds[0].rx6 = &arx6
-	binds[0].tx6 = &brx6
-	binds[1].rx6 = &brx6
-	binds[1].tx6 = &arx6
-	binds[0].target4 = ChannelEndpoint(id)
-	binds[1].target4 = ChannelEndpoint(id)
-	binds[0].target6 = ChannelEndpoint(id)
-	binds[1].target6 = ChannelEndpoint(id)
-	binds[0].source4 = binds[1].target4
-	binds[0].source6 = binds[1].target6
-	binds[1].source4 = binds[0].target4
-	binds[1].source6 = binds[0].target6
-	return [2]conn.Bind{&binds[0], &binds[1]}
-}
-
 func (c ChannelEndpoint) ClearSrc() {}
 
 func (c ChannelEndpoint) SrcToString() string { return "" }
