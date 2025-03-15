@@ -11,10 +11,6 @@ import (
 	"net/netip"
 )
 
-const (
-	VirtualPort = 25565
-)
-
 type chanPkt struct {
 	data   []byte
 	remote ChannelEndpoint2
@@ -23,7 +19,6 @@ type chanPkt struct {
 type ChannelBind2 struct {
 	rx, tx      *chan chanPkt
 	closeSignal chan bool
-	epLookup    *[]string
 	sendVia     func(to ChannelEndpoint2) ChannelEndpoint2
 }
 
@@ -44,8 +39,6 @@ func NewChannelBind2(epLookup *[]string, sendVia1, sendVia2 func(to ChannelEndpo
 	binds[1].rx = &brx4
 	binds[1].tx = &arx4
 
-	binds[0].epLookup = epLookup
-	binds[1].epLookup = epLookup
 	binds[0].sendVia = sendVia1
 	binds[1].sendVia = sendVia2
 	return [2]conn.Bind{&binds[0], &binds[1]}
