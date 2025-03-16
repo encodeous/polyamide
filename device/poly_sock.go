@@ -69,7 +69,7 @@ func (device *Device) routineSendPoly() {
 			elem.endpoint = outEle.ep
 			elemContainer.elems = append(elemContainer.elems, elem)
 
-			if peer.isRunning.Load() && peer.keypairs.Current() != nil {
+			if peer.isRunning.Load() {
 				peer.StagePackets(elemContainer)
 				peer.SendStagedPackets()
 			} else {
