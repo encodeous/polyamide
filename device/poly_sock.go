@@ -90,5 +90,8 @@ func (device *Device) routineSendPoly() {
 }
 
 func (s *PolySock) stop() {
-	s.closeChan <- true
+	select {
+	case s.closeChan <- true:
+	case <-s.closeChan:
+	}
 }
