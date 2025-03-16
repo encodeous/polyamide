@@ -14,9 +14,10 @@ type outboundElement struct {
 }
 
 type PolySock struct {
-	recv     PolyReceiver
-	outQueue chan *outboundElement
-	Device   *Device
+	recv      PolyReceiver
+	outQueue  chan *outboundElement
+	closeChan chan bool
+	Device    *Device
 }
 
 type PolyReceiver interface {
@@ -26,7 +27,7 @@ type PolyReceiver interface {
 
 func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 	if s.outQueue == nil {
-		panic("outQueue is nil")
+		panic("polysock is not started")
 	}
 	elem := &outboundElement{}
 	elem.buffer = s.Device.GetMessageBuffer()
@@ -53,11 +54,17 @@ func newPolySock(dev *Device) *PolySock {
 func (device *Device) routineSendPoly() {
 	// poly sock
 	for !device.isClosed() {
-		if device.net.polySocket == nil { // wait for poly sock to be ready
-			time.Sleep(100 * time.Millisecond)
-			continue
+		// wait for poly sock to be ready
+		if device.net.polySocket != nil {
+			break
 		}
-		for outEle := range device.net.polySocket.outQueue {
+		time.Sleep(100 * time.Millisecond)
+	}
+	for {
+		select {
+		case <-device.net.polySocket.closeChan:
+			return
+		case outEle := <-device.net.polySocket.outQueue:
 			if outEle == nil {
 				return
 			}
@@ -73,16 +80,15 @@ func (device *Device) routineSendPoly() {
 				peer.StagePackets(elemContainer)
 				peer.SendStagedPackets()
 			} else {
-				device.log.Verbosef("unable to stage poly socket, peer is not running or keypair is not ready")
+				device.log.Verbosef("unable to stage poly socket, peer is not running")
 				peer.device.PutMessageBuffer(elem.buffer)
 				peer.device.PutOutboundElement(elem)
 				peer.device.PutOutboundElementsContainer(elemContainer)
 			}
 		}
-		break
 	}
 }
 
 func (s *PolySock) stop() {
-	close(s.outQueue)
+	s.closeChan <- true
 }
