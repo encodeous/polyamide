@@ -29,7 +29,7 @@ var (
 	_ conn.Endpoint = (*ChannelEndpoint2)(nil)
 )
 
-func NewChannelBind2(epLookup *[]string, sendVia1, sendVia2 func(to ChannelEndpoint2) ChannelEndpoint2) [2]conn.Bind {
+func NewChannelBind2(sendVia1, sendVia2 func(to ChannelEndpoint2) ChannelEndpoint2) [2]conn.Bind {
 	arx4 := make(chan chanPkt, 8192)
 	brx4 := make(chan chanPkt, 8192)
 	var binds [2]ChannelBind2
