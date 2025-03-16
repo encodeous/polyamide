@@ -103,7 +103,7 @@ func (c *ChannelBind2) makeReceiveFunc(ch chan chanPkt) conn.ReceiveFunc {
 }
 
 func (c *ChannelBind2) Send(bufs [][]byte, ep conn.Endpoint) error {
-	outEp := c.sendVia(*ep.(*ChannelEndpoint2))
+	outEp := c.sendVia(ep.(ChannelEndpoint2))
 	for _, b := range bufs {
 		select {
 		case <-c.closeSignal:
