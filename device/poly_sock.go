@@ -45,7 +45,7 @@ func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 func newPolySock(dev *Device) *PolySock {
 	return &PolySock{
 		recv:     nil,
-		outQueue: make(chan *outboundElement),
+		outQueue: make(chan *outboundElement, 128),
 		Device:   dev,
 	}
 }
@@ -69,11 +69,11 @@ func (device *Device) routineSendPoly() {
 			elem.endpoint = outEle.ep
 			elemContainer.elems = append(elemContainer.elems, elem)
 
-			if peer.isRunning.Load() {
+			if peer.isRunning.Load() && peer.keypairs.Current() != nil {
 				peer.StagePackets(elemContainer)
 				peer.SendStagedPackets()
 			} else {
-				device.log.Errorf("unable to stage poly socket, peer is not running")
+				device.log.Verbosef("unable to stage poly socket, peer is not running or keypair is not ready")
 				peer.device.PutMessageBuffer(elem.buffer)
 				peer.device.PutOutboundElement(elem)
 				peer.device.PutOutboundElementsContainer(elemContainer)
