@@ -19,7 +19,6 @@ type chanPkt struct {
 type ChannelBind2 struct {
 	rx, tx      *chan chanPkt
 	closeSignal chan bool
-	sendVia     func(to ChannelEndpoint2) ChannelEndpoint2
 }
 
 type ChannelEndpoint2 netip.AddrPort
@@ -29,7 +28,7 @@ var (
 	_ conn.Endpoint = (*ChannelEndpoint2)(nil)
 )
 
-func NewChannelBind2(sendVia1, sendVia2 func(to ChannelEndpoint2) ChannelEndpoint2) [2]conn.Bind {
+func NewChannelBind2() [2]conn.Bind {
 	arx4 := make(chan chanPkt, 8192)
 	brx4 := make(chan chanPkt, 8192)
 	var binds [2]ChannelBind2
@@ -39,8 +38,6 @@ func NewChannelBind2(sendVia1, sendVia2 func(to ChannelEndpoint2) ChannelEndpoin
 	binds[1].rx = &brx4
 	binds[1].tx = &arx4
 
-	binds[0].sendVia = sendVia1
-	binds[1].sendVia = sendVia2
 	return [2]conn.Bind{&binds[0], &binds[1]}
 }
 
@@ -103,7 +100,6 @@ func (c *ChannelBind2) makeReceiveFunc(ch chan chanPkt) conn.ReceiveFunc {
 }
 
 func (c *ChannelBind2) Send(bufs [][]byte, ep conn.Endpoint) error {
-	outEp := c.sendVia(ep.(ChannelEndpoint2))
 	for _, b := range bufs {
 		select {
 		case <-c.closeSignal:
@@ -113,7 +109,7 @@ func (c *ChannelBind2) Send(bufs [][]byte, ep conn.Endpoint) error {
 			copy(bc, b)
 			*c.tx <- chanPkt{
 				data:   bc,
-				remote: outEp,
+				remote: ep.(ChannelEndpoint2),
 			}
 		}
 	}
