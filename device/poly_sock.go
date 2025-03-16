@@ -14,10 +14,10 @@ type outboundElement struct {
 }
 
 type PolySock struct {
-	recv      PolyReceiver
-	outQueue  chan *outboundElement
-	closeChan chan bool
-	Device    *Device
+	recv        PolyReceiver
+	outQueue    chan *outboundElement
+	closeSignal chan bool
+	Device      *Device
 }
 
 type PolyReceiver interface {
@@ -45,9 +45,10 @@ func (s *PolySock) Send(packet []byte, endpoint conn.Endpoint, peer *Peer) {
 
 func newPolySock(dev *Device) *PolySock {
 	return &PolySock{
-		recv:     nil,
-		outQueue: make(chan *outboundElement, 128),
-		Device:   dev,
+		recv:        nil,
+		outQueue:    make(chan *outboundElement, 128),
+		Device:      dev,
+		closeSignal: make(chan bool),
 	}
 }
 
@@ -62,7 +63,7 @@ func (device *Device) routineSendPoly() {
 	}
 	for {
 		select {
-		case <-device.net.polySocket.closeChan:
+		case <-device.net.polySocket.closeSignal:
 			return
 		case outEle := <-device.net.polySocket.outQueue:
 			if outEle == nil {
@@ -90,8 +91,11 @@ func (device *Device) routineSendPoly() {
 }
 
 func (s *PolySock) stop() {
-	select {
-	case s.closeChan <- true:
-	case <-s.closeChan:
+	if s.closeSignal != nil {
+		select {
+		case <-s.closeSignal:
+		default:
+			close(s.closeSignal)
+		}
 	}
 }
