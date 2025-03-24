@@ -64,10 +64,11 @@ type Device struct {
 		limiter        ratelimiter.Ratelimiter
 	}
 
-	allowAllInbound bool
-	Allowedips      AllowedIPs
-	indexTable      IndexTable
-	cookieChecker   CookieChecker
+	AllowAllInbound  bool
+	UseSystemRouting bool
+	Allowedips       AllowedIPs
+	indexTable       IndexTable
+	cookieChecker    CookieChecker
 
 	pool struct {
 		inboundElementsContainer  *WaitPool

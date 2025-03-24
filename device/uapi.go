@@ -90,8 +90,6 @@ func (device *Device) IpcGetOperation(w io.Writer) error {
 			keyf("private_key", (*[32]byte)(&device.staticIdentity.privateKey))
 		}
 
-		sendf("allow_inbound=%s", device.allowAllInbound)
-
 		if device.net.port != 0 {
 			sendf("listen_port=%d", device.net.port)
 		}
@@ -242,10 +240,6 @@ func (device *Device) handleDeviceLine(key, value string) error {
 		}
 		device.log.Verbosef("UAPI: Removing all peers")
 		device.RemoveAllPeers()
-
-	case "allow_inbound":
-		device.log.Verbosef("UAPI: Updating allow inbound")
-		device.allowAllInbound = value == "true"
 	default:
 		return ipcErrorf(ipc.IpcErrorInvalid, "invalid UAPI device key: %v", key)
 	}
