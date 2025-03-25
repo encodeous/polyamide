@@ -441,9 +441,10 @@ func (peer *Peer) RoutineSequentialReceiver(maxBatchSize int) {
 	bufs := make([][]byte, 0, maxBatchSize)
 
 	elemsByPeer := make(map[*Peer]*QueueOutboundElementsContainer, maxBatchSize)
+	conts := make([]*QueueInboundElementsContainer, 1)
 
 	for {
-		conts := make([]*QueueInboundElementsContainer, 1)
+		conts = conts[:1]
 		conts[0] = <-peer.queue.inbound.c
 		if conts[0] == nil {
 			return
